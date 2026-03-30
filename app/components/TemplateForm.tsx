@@ -1,4 +1,4 @@
-import { useState, useCallback, useId } from "react";
+import { useState, useCallback } from "react";
 import { useSubmit, useNavigate } from "@remix-run/react";
 import {
   Page,
@@ -9,21 +9,13 @@ import {
   Select,
   Checkbox,
   Button,
-  ButtonGroup,
   Banner,
   Text,
-  Divider,
   InlineStack,
   BlockStack,
   Box,
-  Badge,
-  Icon,
-  Tooltip,
-  IndexTable,
-  EmptySearchResult,
 } from "@shopify/polaris";
-import { PlusIcon, DeleteIcon, DragHandleIcon } from "@shopify/polaris-icons";
-import { ResourcePicker } from "@shopify/app-bridge-react";
+import { PlusIcon, DeleteIcon } from "@shopify/polaris-icons";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -161,7 +153,6 @@ export default function TemplateForm({
   };
 
   const [form, setForm] = useState<TemplateFormData>(defaultData);
-  const [resourcePickerOpen, setResourcePickerOpen] = useState(false);
   const [pickingForIndex, setPickingForIndex] = useState<number | null>(null);
 
   const set = useCallback(
@@ -188,23 +179,31 @@ export default function TemplateForm({
   const addLineItem = () =>
     setForm((f) => ({ ...f, lineItems: [...f.lineItems, newLineItem()] }));
 
-  const openProductPicker = (index: number) => {
+  const openProductPicker = async (index: number) => {
     setPickingForIndex(index);
-    setResourcePickerOpen(true);
-  };
-
-  const handleProductSelection = ({ selection }: { selection: Array<{ variants: Array<{ id: string; title: string; price: string; sku: string }>; title: string }> }) => {
-    setResourcePickerOpen(false);
-    if (pickingForIndex === null || !selection.length) return;
-    const product = selection[0];
-    const variant = product.variants[0];
-    updateLineItem(pickingForIndex, {
-      variantId: variant.id,
-      variantTitle: variant.title,
-      productTitle: product.title,
-      price: variant.price,
-      sku: variant.sku || "",
-    });
+    try {
+      // App Bridge v4 imperative resource picker API
+      const selected = await (shopify as unknown as {
+        resourcePicker: (opts: {
+          type: string;
+          action: string;
+          multiple: boolean;
+          selectionIds?: Array<{ id: string }>;
+        }) => Promise<Array<{ variants: Array<{ id: string; title: string; price: string; sku: string }>; title: string }> | undefined>;
+      }).resourcePicker({ type: "variant", action: "select", multiple: false });
+      if (!selected || !selected.length) { setPickingForIndex(null); return; }
+      const variant = selected[0].variants ? selected[0].variants[0] : (selected[0] as unknown as { id: string; title: string; price: string; sku: string; product: { title: string } });
+      const productTitle = selected[0].variants ? selected[0].title : (selected[0] as unknown as { product: { title: string } }).product?.title || "";
+      updateLineItem(index, {
+        variantId: (variant as { id: string }).id,
+        variantTitle: (variant as { title: string }).title,
+        productTitle,
+        price: (variant as { price: string }).price,
+        sku: (variant as { sku?: string }).sku || "",
+      });
+    } catch {
+      // user cancelled or error
+    }
     setPickingForIndex(null);
   };
 
@@ -297,19 +296,6 @@ export default function TemplateForm({
 
   return (
     <>
-      {/* Product picker from Shopify App Bridge */}
-      <ResourcePicker
-        resourceType="ProductVariant"
-        open={resourcePickerOpen}
-        onSelection={handleProductSelection}
-        onCancel={() => {
-          setResourcePickerOpen(false);
-          setPickingForIndex(null);
-        }}
-        allowMultiple={false}
-        showVariants
-      />
-
       <Page
         title={isNew ? "New Cart Template" : form.title || "Edit Template"}
         backAction={{ content: "Templates", onAction: () => navigate("/app") }}
