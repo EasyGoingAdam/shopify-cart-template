@@ -1,0 +1,21 @@
+node_modules
+.DS_Store
+*.log
+.env
+
+# Build output
+/build
+/public/build
+
+# Prisma
+dev.db
+dev.db-journal
+*.db
+*.db-journal
+/prisma/migrations/
+
+# Shopify
+.shopify
+
+# Vite
+.vite

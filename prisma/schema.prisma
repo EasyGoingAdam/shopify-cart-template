@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Shopify session storage — required by @shopify/shopify-app-session-storage-prisma
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+// A saved cart template created by a merchant
+model CartTemplate {
+  id          String   @id @default(cuid())
+  shop        String   // Shopify shop domain e.g. "mystore.myshopify.com"
+  title       String
+  description String?
+  slug        String   @unique  // short unique slug for shareable URL
+  isActive    Boolean  @default(true)
+  usageCount  Int      @default(0)
+
+  // Template content — stored as JSON blobs for maximum flexibility
+  // LineItem[]: { variantId?, title, quantity, price?, sku?, taxable?, requiresShipping?, customAttributes? }
+  lineItems   String   @default("[]")
+
+  // Applied discount on the whole order
+  // { type: 'percentage'|'fixed_amount', value: number, title?, description? } | null
+  discount    String?
+
+  // Customer pre-fill: { email?, firstName?, lastName?, phone? } | null
+  customer    String?
+
+  // Shipping address template: { firstName?, lastName?, company?, address1?, address2?, city?, province?, zip?, country?, phone? } | null
+  shippingAddress String?
+
+  // Preferred shipping line title (informational — actual rate is determined at checkout)
+  shippingLine  String?
+
+  note        String?
+  tags        String?   // comma-separated tag list
+  taxExempt   Boolean  @default(false)
+
+  // CustomAttribute[]: { key: string, value: string }
+  customAttributes String @default("[]")
+
+  // Payment terms: { paymentTermsName?, dueInDays? } | null
+  paymentTerms String?
+
+  currency    String?   // ISO currency code e.g. "USD"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  usageLogs   TemplateUsage[]
+
+  @@index([shop])
+  @@index([slug])
+}
+
+// Tracks every time a shareable link is visited and a Draft Order is created
+model TemplateUsage {
+  id              String       @id @default(cuid())
+  templateId      String
+  template        CartTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  draftOrderId    String?      // Shopify GID
+  draftOrderName  String?      // e.g. "#D1"
+  draftOrderUrl   String?      // invoice URL the visitor was redirected to
+  visitorIp       String?
+  createdAt       DateTime     @default(now())
+
+  @@index([templateId])
+}
