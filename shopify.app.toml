@@ -1,6 +1,6 @@
 name = "cart-template"
-client_id = "your-shopify-api-key-here"
-application_url = "https://your-app-url.railway.app"
+client_id = "664cf222a9563d26ddcab74ea2765e50"
+application_url = "https://web-production-e0416.up.railway.app"
 embedded = true
 
 [build]
@@ -14,9 +14,9 @@ embedded = true
 
 [auth]
   redirect_urls = [
-    "https://your-app-url.railway.app/auth/callback",
-    "https://your-app-url.railway.app/auth/shopify/callback",
-    "https://your-app-url.railway.app/api/auth/callback"
+    "https://web-production-e0416.up.railway.app/auth/callback",
+    "https://web-production-e0416.up.railway.app/auth/shopify/callback",
+    "https://web-production-e0416.up.railway.app/api/auth/callback"
   ]
 
 [webhooks]
