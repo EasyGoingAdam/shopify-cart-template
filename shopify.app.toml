@@ -26,5 +26,17 @@ embedded = true
     topics = ["app/uninstalled"]
     uri = "/webhooks"
 
+  [[webhooks.subscriptions]]
+    topics = ["customers/data_request"]
+    uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+    topics = ["customers/redact"]
+    uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+    topics = ["shop/redact"]
+    uri = "/webhooks"
+
 [pos]
   embedded = false
