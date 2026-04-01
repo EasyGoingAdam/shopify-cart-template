@@ -192,9 +192,9 @@ function buildDraftOrderInput(params: CreateDraftOrderParams) {
     );
   }
 
-  // Currency
+  // Currency — DraftOrderInput uses presentmentCurrencyCode, not currency
   if (params.currency) {
-    input.currency = params.currency;
+    input.presentmentCurrencyCode = params.currency;
   }
 
   // Payment terms
